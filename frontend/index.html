@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Crime Data Analytics & Visualization System - Advanced GIS Heatmaps, Diurnal Crime Clocks, Predictive Threat Modeling, and Real-Time Incident Intelligence.">
+    <meta name="theme-color" content="#0a0f1d">
+    <title>CrimeTrack Intelligence // Real-Time Crime Data Analytics & Visualization System</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet GIS Map & Heatmap CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css?v=3.2.0">
+</head>
+<body class="dark-theme">
+    <!-- Main Shell -->
+    <div class="app-layout">
+        
+        <!-- Top Navigation Bar -->
+        <header class="topbar" id="main-topbar">
+            <div class="brand-section">
+                <div class="brand-logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1 class="brand-title">CRIMETRACK // INTEL-X</h1>
+                    <span class="brand-subtitle">Crime Data Analytics & Visualization System</span>
+                </div>
+            </div>
+
+            <!-- Central Live System Status -->
+            <div class="system-status-indicator" id="system-status-badge">
+                <span class="status-pulse-dot"></span>
+                <span class="status-label">DATASET ACTIVE: <strong id="header-total-count">15,000</strong> INCIDENTS (CITY OF CHICAGO)</span>
+            </div>
+
+            <!-- Top Action Controls -->
+            <div class="topbar-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-sync-data" title="Fetch fresh incidents from City of Chicago Open Data API">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Sync Live Data</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-export-csv" title="Export currently filtered dataset to CSV">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Export CSV</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-open-briefing" title="Generate printable executive intelligence report">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Executive Briefing</span>
+                </button>
+                <a href="/india" class="btn btn-india btn-sm" id="btn-goto-india" title="Open National Crime Records Bureau India Portal">
+                    <span>🇮🇳 India Crime Portal →</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs Bar -->
+        <nav class="nav-tabs-bar" id="navigation-tabs" aria-label="Dashboard Views">
+            <button class="nav-tab active" data-view="view-dashboard" id="tab-dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                <span>Command Dashboard</span>
+            </button>
+            <button class="nav-tab" data-view="view-map" id="tab-map">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                <span>GIS Heatmap & Clusters</span>
+            </button>
+            <button class="nav-tab" data-view="view-trends" id="tab-trends">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                <span>Temporal & Trend Analytics</span>
+            </button>
+            <button class="nav-tab" data-view="view-predictive" id="tab-predictive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Predictive Risk & Safety</span>
+            </button>
+            <button class="nav-tab" data-view="view-explorer" id="tab-explorer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span>Incident Explorer</span>
+            </button>
+            <button class="nav-tab" data-view="view-report" id="tab-report">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <span>Intelligence Report</span>
+            </button>
+            <button class="nav-tab" data-view="view-global-cities" id="tab-global-cities">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span>World Cities Roster</span>
+            </button>
+        </nav>
+
+        <!-- Dynamic Filter Controls Bar -->
+        <section class="filter-strip" id="filter-strip" aria-label="Global Data Filters">
+            <div class="filter-group">
+                <label for="filter-country" class="filter-label">Country / Jurisdiction</label>
+                <select id="filter-country" class="filter-select">
+                    <option value="Afghanistan">🇦🇫 Afghanistan (1 city)</option>
+                    <option value="Albania">🇦🇱 Albania (1 city)</option>
+                    <option value="Algeria">🇩🇿 Algeria (1 city)</option>
+                    <option value="Andorra">🇦🇩 Andorra (1 city)</option>
+                    <option value="Angola">🇦🇴 Angola (1 city)</option>
+                    <option value="Antigua and Barbuda">🇦🇬 Antigua and Barbuda (1 city)</option>
+                    <option value="Argentina">🇦🇷 Argentina (1 city)</option>
+                    <option value="Armenia">🇦🇲 Armenia (1 city)</option>
+                    <option value="Australia">🇦🇺 Australia (3 cities)</option>
+                    <option value="Austria">🇦🇹 Austria (1 city)</option>
+                    <option value="Azerbaijan">🇦🇿 Azerbaijan (1 city)</option>
+                    <option value="Bahamas">🇧🇸 Bahamas (1 city)</option>
+                    <option value="Bahrain">🇧🇭 Bahrain (1 city)</option>
+                    <option value="Bangladesh">🇧🇩 Bangladesh (1 city)</option>
+                    <option value="Barbados">🇧🇧 Barbados (1 city)</option>
+                    <option value="Belarus">🇧🇾 Belarus (1 city)</option>
+                    <option value="Belgium">🇧🇪 Belgium (1 city)</option>
+                    <option value="Belize">🇧🇿 Belize (1 city)</option>
+                    <option value="Benin">🇧🇯 Benin (1 city)</option>
+                    <option value="Bhutan">🇧🇹 Bhutan (1 city)</option>
+                    <option value="Bolivia">🇧🇴 Bolivia (1 city)</option>
+                    <option value="Bosnia and Herzegovina">🇧🇦 Bosnia and Herzegovina (1 city)</option>
+                    <option value="Botswana">🇧🇼 Botswana (1 city)</option>
+                    <option value="Brazil">🇧🇷 Brazil (2 cities)</option>
+                    <option value="Brunei">🇧🇳 Brunei (1 city)</option>
+                    <option value="Bulgaria">🇧🇬 Bulgaria (1 city)</option>
+                    <option value="Burkina Faso">🇧🇫 Burkina Faso (1 city)</option>
+                    <option value="Burundi">🇧🇮 Burundi (1 city)</option>
+                    <option value="Cabo Verde">🇨🇻 Cabo Verde (1 city)</option>
+                    <option value="Cambodia">🇰🇭 Cambodia (1 city)</option>
+                    <option value="Cameroon">🇨🇲 Cameroon (1 city)</option>
+                    <option value="Canada">🇨🇦 Canada (3 cities)</option>
+                    <option value="Central African Republic">🇨🇫 Central African Republic (1 city)</option>
+                    <option value="Chad">🇹🇩 Chad (1 city)</option>
+                    <option value="Chile">🇨🇱 Chile (1 city)</option>
+                    <option value="China">🇨🇳 China (3 cities)</option>
+                    <option value="Colombia">🇨🇴 Colombia (1 city)</option>
+                    <option value="Comoros">🇰🇲 Comoros (1 city)</option>
+                    <option value="Congo">🇨🇬 Congo (1 city)</option>
+                    <option value="Costa Rica">🇨🇷 Costa Rica (1 city)</option>
+                    <option value="Cote d'Ivoire">🇨🇮 Cote d'Ivoire (1 city)</option>
+                    <option value="Croatia">🇭🇷 Croatia (1 city)</option>
+                    <option value="Cuba">🇨🇺 Cuba (1 city)</option>
+                    <option value="Cyprus">🇨🇾 Cyprus (1 city)</option>
+                    <option value="Czech Republic">🇨🇿 Czech Republic (1 city)</option>
+                    <option value="DR Congo">🇨🇩 DR Congo (1 city)</option>
+                    <option value="Denmark">🇩🇰 Denmark (1 city)</option>
+                    <option value="Djibouti">🇩🇯 Djibouti (1 city)</option>
+                    <option value="Dominica">🇩🇲 Dominica (1 city)</option>
+                    <option value="Dominican Republic">🇩🇴 Dominican Republic (1 city)</option>
+                    <option value="Ecuador">🇪🇨 Ecuador (1 city)</option>
+                    <option value="Egypt">🇪🇬 Egypt (2 cities)</option>
+                    <option value="El Salvador">🇸🇻 El Salvador (1 city)</option>
+                    <option value="Equatorial Guinea">🇬🇶 Equatorial Guinea (1 city)</option>
+                    <option value="Eritrea">🇪🇷 Eritrea (1 city)</option>
+                    <option value="Estonia">🇪🇪 Estonia (1 city)</option>
+                    <option value="Eswatini">🇸🇿 Eswatini (1 city)</option>
+                    <option value="Ethiopia">🇪🇹 Ethiopia (1 city)</option>
+                    <option value="Fiji">🇫🇯 Fiji (1 city)</option>
+                    <option value="Finland">🇫🇮 Finland (1 city)</option>
+                    <option value="France">🇫🇷 France (3 cities)</option>
+                    <option value="Gabon">🇬🇦 Gabon (1 city)</option>
+                    <option value="Gambia">🇬🇲 Gambia (1 city)</option>
+                    <option value="Georgia">🇬🇪 Georgia (1 city)</option>
+                    <option value="Germany">🇩🇪 Germany (4 cities)</option>
+                    <option value="Ghana">🇬🇭 Ghana (1 city)</option>
+                    <option value="Greece">🇬🇷 Greece (1 city)</option>
+                    <option value="Grenada">🇬🇩 Grenada (1 city)</option>
+                    <option value="Guatemala">🇬🇹 Guatemala (1 city)</option>
+                    <option value="Guinea">🇬🇳 Guinea (1 city)</option>
+                    <option value="Guinea-Bissau">🇬🇼 Guinea-Bissau (1 city)</option>
+                    <option value="Guyana">🇬🇾 Guyana (1 city)</option>
+                    <option value="Haiti">🇭🇹 Haiti (1 city)</option>
+                    <option value="Honduras">🇭🇳 Honduras (1 city)</option>
+                    <option value="Hong Kong">🇭🇰 Hong Kong (1 city)</option>
+                    <option value="Hungary">🇭🇺 Hungary (1 city)</option>
+                    <option value="Iceland">🇮🇸 Iceland (1 city)</option>
+                    <option value="India">🇮🇳 India (6 cities)</option>
+                    <option value="Indonesia">🇮🇩 Indonesia (1 city)</option>
+                    <option value="Iran">🇮🇷 Iran (1 city)</option>
+                    <option value="Iraq">🇮🇶 Iraq (1 city)</option>
+                    <option value="Ireland">🇮🇪 Ireland (1 city)</option>
+                    <option value="Israel">🇮🇱 Israel (1 city)</option>
+                    <option value="Italy">🇮🇹 Italy (2 cities)</option>
+                    <option value="Jamaica">🇯🇲 Jamaica (1 city)</option>
+                    <option value="Japan">🇯🇵 Japan (2 cities)</option>
+                    <option value="Jordan">🇯🇴 Jordan (1 city)</option>
+                    <option value="Kazakhstan">🇰🇿 Kazakhstan (1 city)</option>
+                    <option value="Kenya">🇰🇪 Kenya (1 city)</option>
+                    <option value="Kiribati">🇰🇮 Kiribati (1 city)</option>
+                    <option value="Kosovo">🇽🇰 Kosovo (1 city)</option>
+                    <option value="Kuwait">🇰🇼 Kuwait (1 city)</option>
+                    <option value="Kyrgyzstan">🇰🇬 Kyrgyzstan (1 city)</option>
+                    <option value="Laos">🇱🇦 Laos (1 city)</option>
+                    <option value="Latvia">🇱🇻 Latvia (1 city)</option>
+                    <option value="Lebanon">🇱🇧 Lebanon (1 city)</option>
+                    <option value="Lesotho">🇱🇸 Lesotho (1 city)</option>
+                    <option value="Liberia">🇱🇷 Liberia (1 city)</option>
+                    <option value="Libya">🇱🇾 Libya (1 city)</option>
+                    <option value="Liechtenstein">🇱🇮 Liechtenstein (1 city)</option>
+                    <option value="Lithuania">🇱🇹 Lithuania (1 city)</option>
+                    <option value="Luxembourg">🇱🇺 Luxembourg (1 city)</option>
+                    <option value="Madagascar">🇲🇬 Madagascar (1 city)</option>
+                    <option value="Malawi">🇲🇼 Malawi (1 city)</option>
+                    <option value="Malaysia">🇲🇾 Malaysia (1 city)</option>
+                    <option value="Maldives">🇲🇻 Maldives (1 city)</option>
+                    <option value="Mali">🇲🇱 Mali (1 city)</option>
+                    <option value="Malta">🇲🇹 Malta (1 city)</option>
+                    <option value="Marshall Islands">🇲🇭 Marshall Islands (1 city)</option>
+                    <option value="Mauritania">🇲🇷 Mauritania (1 city)</option>
+                    <option value="Mauritius">🇲🇺 Mauritius (1 city)</option>
+                    <option value="Mexico">🇲🇽 Mexico (1 city)</option>
+                    <option value="Micronesia">🇫🇲 Micronesia (1 city)</option>
+                    <option value="Moldova">🇲🇩 Moldova (1 city)</option>
+                    <option value="Monaco">🇲🇨 Monaco (1 city)</option>
+                    <option value="Mongolia">🇲🇳 Mongolia (1 city)</option>
+                    <option value="Montenegro">🇲🇪 Montenegro (1 city)</option>
+                    <option value="Morocco">🇲🇦 Morocco (1 city)</option>
+                    <option value="Mozambique">🇲🇿 Mozambique (1 city)</option>
+                    <option value="Myanmar">🇲🇲 Myanmar (1 city)</option>
+                    <option value="Namibia">🇳🇦 Namibia (1 city)</option>
+                    <option value="Nauru">🇳🇷 Nauru (1 city)</option>
+                    <option value="Nepal">🇳🇵 Nepal (1 city)</option>
+                    <option value="Netherlands">🇳🇱 Netherlands (1 city)</option>
+                    <option value="New Zealand">🇳🇿 New Zealand (2 cities)</option>
+                    <option value="Nicaragua">🇳🇮 Nicaragua (1 city)</option>
+                    <option value="Niger">🇳🇪 Niger (1 city)</option>
+                    <option value="Nigeria">🇳🇬 Nigeria (1 city)</option>
+                    <option value="North Korea">🇰🇵 North Korea (1 city)</option>
+                    <option value="North Macedonia">🇲🇰 North Macedonia (1 city)</option>
+                    <option value="Norway">🇳🇴 Norway (1 city)</option>
+                    <option value="Oman">🇴🇲 Oman (1 city)</option>
+                    <option value="Pakistan">🇵🇰 Pakistan (1 city)</option>
+                    <option value="Palau">🇵🇼 Palau (1 city)</option>
+                    <option value="Palestine">🇵🇸 Palestine (1 city)</option>
+                    <option value="Panama">🇵🇦 Panama (1 city)</option>
+                    <option value="Papua New Guinea">🇵🇬 Papua New Guinea (1 city)</option>
+                    <option value="Paraguay">🇵🇾 Paraguay (1 city)</option>
+                    <option value="Peru">🇵🇪 Peru (1 city)</option>
+                    <option value="Philippines">🇵🇭 Philippines (1 city)</option>
+                    <option value="Poland">🇵🇱 Poland (1 city)</option>
+                    <option value="Portugal">🇵🇹 Portugal (2 cities)</option>
+                    <option value="Qatar">🇶🇦 Qatar (1 city)</option>
+                    <option value="Romania">🇷🇴 Romania (1 city)</option>
+                    <option value="Russia">🇷🇺 Russia (1 city)</option>
+                    <option value="Rwanda">🇷🇼 Rwanda (1 city)</option>
+                    <option value="Saint Kitts and Nevis">🇰🇳 Saint Kitts and Nevis (1 city)</option>
+                    <option value="Saint Lucia">🇱🇨 Saint Lucia (1 city)</option>
+                    <option value="Saint Vincent and the Grenadines">🇻🇨 Saint Vincent and the Grenadines (1 city)</option>
+                    <option value="Samoa">🇼🇸 Samoa (1 city)</option>
+                    <option value="San Marino">🇸🇲 San Marino (1 city)</option>
+                    <option value="Sao Tome and Principe">🇸🇹 Sao Tome and Principe (1 city)</option>
+                    <option value="Saudi Arabia">🇸🇦 Saudi Arabia (1 city)</option>
+                    <option value="Senegal">🇸🇳 Senegal (1 city)</option>
+                    <option value="Serbia">🇷🇸 Serbia (1 city)</option>
+                    <option value="Seychelles">🇸🇨 Seychelles (1 city)</option>
+                    <option value="Sierra Leone">🇸🇱 Sierra Leone (1 city)</option>
+                    <option value="Singapore">🇸🇬 Singapore (1 city)</option>
+                    <option value="Slovakia">🇸🇰 Slovakia (1 city)</option>
+                    <option value="Slovenia">🇸🇮 Slovenia (1 city)</option>
+                    <option value="Solomon Islands">🇸🇧 Solomon Islands (1 city)</option>
+                    <option value="Somalia">🇸🇴 Somalia (1 city)</option>
+                    <option value="South Africa">🇿🇦 South Africa (2 cities)</option>
+                    <option value="South Korea">🇰🇷 South Korea (2 cities)</option>
+                    <option value="South Sudan">🇸🇸 South Sudan (1 city)</option>
+                    <option value="Spain">🇪🇸 Spain (2 cities)</option>
+                    <option value="Sri Lanka">🇱🇰 Sri Lanka (1 city)</option>
+                    <option value="Sudan">🇸🇩 Sudan (1 city)</option>
+                    <option value="Suriname">🇸🇷 Suriname (1 city)</option>
+                    <option value="Sweden">🇸🇪 Sweden (1 city)</option>
+                    <option value="Switzerland">🇨🇭 Switzerland (2 cities)</option>
+                    <option value="Syria">🇸🇾 Syria (1 city)</option>
+                    <option value="Taiwan">🇹🇼 Taiwan (1 city)</option>
+                    <option value="Tajikistan">🇹🇯 Tajikistan (1 city)</option>
+                    <option value="Tanzania">🇹🇿 Tanzania (1 city)</option>
+                    <option value="Thailand">🇹🇭 Thailand (1 city)</option>
+                    <option value="Timor-Leste">🇹🇱 Timor-Leste (1 city)</option>
+                    <option value="Togo">🇹🇬 Togo (1 city)</option>
+                    <option value="Tonga">🇹🇴 Tonga (1 city)</option>
+                    <option value="Trinidad and Tobago">🇹🇹 Trinidad and Tobago (1 city)</option>
+                    <option value="Tunisia">🇹🇳 Tunisia (1 city)</option>
+                    <option value="Turkey">🇹🇷 Turkey (1 city)</option>
+                    <option value="Turkmenistan">🇹🇲 Turkmenistan (1 city)</option>
+                    <option value="Tuvalu">🇹🇻 Tuvalu (1 city)</option>
+                    <option value="Uganda">🇺🇬 Uganda (1 city)</option>
+                    <option value="Ukraine">🇺🇦 Ukraine (1 city)</option>
+                    <option value="United Arab Emirates">🇦🇪 United Arab Emirates (1 city)</option>
+                    <option value="United Kingdom">🇬🇧 United Kingdom (4 cities)</option>
+                    <option value="United States" selected>🇺🇸 United States (7 cities)</option>
+                    <option value="Uruguay">🇺🇾 Uruguay (1 city)</option>
+                    <option value="Uzbekistan">🇺🇿 Uzbekistan (1 city)</option>
+                    <option value="Vanuatu">🇻🇺 Vanuatu (1 city)</option>
+                    <option value="Vatican City">🇻🇦 Vatican City (1 city)</option>
+                    <option value="Venezuela">🇻🇪 Venezuela (1 city)</option>
+                    <option value="Vietnam">🇻🇳 Vietnam (1 city)</option>
+                    <option value="Yemen">🇾🇪 Yemen (1 city)</option>
+                    <option value="Zambia">🇿🇲 Zambia (1 city)</option>
+                    <option value="Zimbabwe">🇿🇼 Zimbabwe (1 city)</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-city" class="filter-label">Metropolitan City</label>
+                <select id="filter-city" class="filter-select">
+                    <option value="Chicago" selected>Chicago (Live SQLite)</option>
+                    <option value="New York City">New York City (High Alert)</option>
+                    <option value="Los Angeles">Los Angeles (Elevated)</option>
+                    <option value="Houston">Houston (Elevated)</option>
+                    <option value="Miami">Miami (Moderate)</option>
+                    <option value="San Francisco">San Francisco (Elevated)</option>
+                    <option value="Washington D.C.">Washington D.C. (High Alert)</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-crime-type" class="filter-label">Offense Category</label>
+                <select id="filter-crime-type" class="filter-select">
+                    <option value="">All Crime Categories</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-district" class="filter-label">Police District</label>
+                <select id="filter-district" class="filter-select">
+                    <option value="">All 22 Districts</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Crime Class</label>
+                <div class="btn-toggle-group" id="toggle-violence">
+                    <button type="button" class="btn-toggle active" data-val="">All</button>
+                    <button type="button" class="btn-toggle" data-val="1">Violent</button>
+                    <button type="button" class="btn-toggle" data-val="0">Property</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Arrest Status</label>
+                <div class="btn-toggle-group" id="toggle-arrest">
+                    <button type="button" class="btn-toggle active" data-val="">All</button>
+                    <button type="button" class="btn-toggle" data-val="1">Arrested</button>
+                    <button type="button" class="btn-toggle" data-val="0">Unsolved</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Domestic Flag</label>
+                <div class="btn-toggle-group" id="toggle-domestic">
+                    <button type="button" class="btn-toggle active" data-val="">All</button>
+                    <button type="button" class="btn-toggle" data-val="1">Domestic</button>
+                    <button type="button" class="btn-toggle" data-val="0">Public</button>
+                </div>
+            </div>
+
+            <div class="filter-group filter-search-group">
+                <label for="filter-search-input" class="filter-label">Search Incidents</label>
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="filter-search-input" class="filter-search" placeholder="Search block, case#, desc...">
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-reset-filters" title="Reset all filters">
+                    Reset
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Content Area Container -->
+        <main class="content-container" id="main-content">
+
+            <!-- ================= VIEW 1: COMMAND DASHBOARD ================= -->
+            <section class="view-panel active" id="view-dashboard">
+                <!-- KPI Cards Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" id="kpi-total">
+                        <div class="kpi-icon icon-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+                        </div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">TOTAL INCIDENTS</span>
+                            <span class="kpi-value" id="val-total-incidents">--</span>
+                            <span class="kpi-delta" id="val-date-span">Dataset Range: Active</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" id="kpi-violent">
+                        <div class="kpi-icon icon-danger">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        </div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">VIOLENT CRIMES</span>
+                            <div class="kpi-value-row">
+                                <span class="kpi-value text-danger" id="val-violent-incidents">--</span>
+                                <span class="kpi-badge badge-danger" id="val-violent-rate">--%</span>
+                            </div>
+                            <span class="kpi-delta">Battery, Assault, Robbery, Weapons</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" id="kpi-arrest">
+                        <div class="kpi-icon icon-info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">ARREST CLEARANCE RATE</span>
+                            <div class="kpi-value-row">
+                                <span class="kpi-value text-info" id="val-arrest-rate">--%</span>
+                                <span class="kpi-badge badge-info" id="val-arrest-count">-- arrests</span>
+                            </div>
+                            <span class="kpi-delta">Suspect apprehension efficiency</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" id="kpi-domestic">
+                        <div class="kpi-icon icon-warning">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        </div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">DOMESTIC INCIDENTS</span>
+                            <div class="kpi-value-row">
+                                <span class="kpi-value text-warning" id="val-domestic-rate">--%</span>
+                                <span class="kpi-badge badge-warning" id="val-domestic-count">--</span>
+                            </div>
+                            <span class="kpi-delta">Residential dispute ratio</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card" id="kpi-district">
+                        <div class="kpi-icon icon-amber">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        </div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">CRITICAL HOTSPOT DISTRICT</span>
+                            <span class="kpi-value text-amber" id="val-top-district">--</span>
+                            <span class="kpi-delta" id="val-top-district-detail">Highest incident volume</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Interactive Charts Row 1 -->
+                <div class="charts-row">
+                    <!-- Diurnal 24h Crime Clock -->
+                    <div class="glass-card chart-card flex-2">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">24-Hour Diurnal Crime Clock</h2>
+                                <span class="card-subtitle">Hourly incident frequency & violent crime proportion</span>
+                            </div>
+                            <div class="card-badge" id="peak-hour-badge">PEAK: --:--</div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-diurnal"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Offense Category Donut / Breakdown -->
+                    <div class="glass-card chart-card flex-1">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">Crime Category Breakdown</h2>
+                                <span class="card-subtitle">Distribution of top reported offenses</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper donut-wrapper">
+                            <canvas id="chart-categories-donut"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Interactive Charts Row 2 -->
+                <div class="charts-row">
+                    <!-- Day of Week Surge Chart -->
+                    <div class="glass-card chart-card flex-1">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">Day-of-Week Surge Analysis</h2>
+                                <span class="card-subtitle">Weekend vs Weekday incident volume distribution</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-dow"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Incident Locations Bar Chart -->
+                    <div class="glass-card chart-card flex-1">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">High-Frequency Location Environments</h2>
+                                <span class="card-subtitle">Street, residence, transit, or retail venues</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-locations"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: GIS HEATMAP & CLUSTERS ================= -->
+            <section class="view-panel" id="view-map">
+                <div class="map-layout">
+                    <!-- Map Controls Sidebar -->
+                    <div class="map-sidebar glass-card">
+                        <h2 class="sidebar-heading">Geospatial Intelligence Controls</h2>
+                        
+                        <div class="map-control-section">
+                            <label class="control-label">Layer Visualization Mode</label>
+                            <div class="layer-buttons">
+                                <button type="button" class="btn-layer active" id="btn-layer-heatmap">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                    <span>Density Heatmap</span>
+                                </button>
+                                <button type="button" class="btn-layer" id="btn-layer-markers">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                                    <span>Incident Pins</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="map-control-section">
+                            <label for="heatmap-radius-slider" class="control-label">Heatmap Kernel Radius (<span id="radius-val">25</span>px)</label>
+                            <input type="range" id="heatmap-radius-slider" min="10" max="50" value="25" class="slider-input">
+                        </div>
+
+                        <div class="map-control-section">
+                            <label for="heatmap-blur-slider" class="control-label">Heatmap Blur Intensity (<span id="blur-val">15</span>px)</label>
+                            <input type="range" id="heatmap-blur-slider" min="5" max="30" value="15" class="slider-input">
+                        </div>
+
+                        <div class="map-legend">
+                            <span class="legend-title">Heatmap Density Gradient</span>
+                            <div class="legend-bar"></div>
+                            <div class="legend-labels">
+                                <span>Low Density</span>
+                                <span>Moderate</span>
+                                <span>High Threat Hotspot</span>
+                            </div>
+                        </div>
+
+                        <div class="map-stats-summary" id="map-point-counter">
+                            <div class="stat-mini">
+                                <span class="stat-label">Mapped Incidents</span>
+                                <span class="stat-value" id="map-rendered-count">2,500</span>
+                            </div>
+                            <div class="stat-mini">
+                                <span class="stat-label">Coordinate Precision</span>
+                                <span class="stat-value text-emerald">GPS Verified</span>
+                            </div>
+                        </div>
+
+                        <div class="quick-district-jump">
+                            <label class="control-label">Quick District Focus</label>
+                            <div class="district-tags" id="district-tags-container">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leaflet GIS Map Container -->
+                    <div class="map-canvas-container glass-card">
+                        <div id="leaflet-crime-map" class="crime-map"></div>
+                        <div class="map-overlay-badge" id="map-viewport-info">
+                            <span>CHICAGO METRO AREA // 41.8781° N, 87.6298° W</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: TEMPORAL & TREND ANALYTICS ================= -->
+            <section class="view-panel" id="view-trends">
+                <div class="charts-row">
+                    <!-- Daily Incident Progression Timeline -->
+                    <div class="glass-card chart-card flex-2">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">Chronological Daily Progression Timeline</h2>
+                                <span class="card-subtitle">Daily total incidents vs violent crime vs arrest clearance</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper timeline-wrapper">
+                            <canvas id="chart-daily-timeline"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <!-- Arrest Clearance Rate by Offense -->
+                    <div class="glass-card chart-card flex-1">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">Arrest Clearance Rate by Offense</h2>
+                                <span class="card-subtitle">Percentage of reported crimes resulting in active apprehension</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-arrest-clearance"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Violent vs Non-Violent Radar / Matrix -->
+                    <div class="glass-card chart-card flex-1">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <h2 class="card-title">Hourly Violent vs Property Ratio</h2>
+                                <span class="card-subtitle">Shift in crime severity between day & nighttime hours</span>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-hourly-split"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 4: PREDICTIVE RISK & SAFETY ================= -->
+            <section class="view-panel" id="view-predictive">
+                <!-- Predictive Threat Forecast Curve -->
+                <div class="glass-card chart-card mb-4">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <h2 class="card-title">24-Hour Predictive Crime Risk Probability Model</h2>
+                            <span class="card-subtitle">Statistical threat probability matrix calculated from volume and violence ratios</span>
+                        </div>
+                        <div class="model-badge">ALGORITHM: WEIGHTED TEMPORAL-SPATIAL DENSITY (WTSD)</div>
+                    </div>
+                    <div class="chart-wrapper predictive-chart-wrapper">
+                        <canvas id="chart-predictive-risk"></canvas>
+                    </div>
+                </div>
+
+                <!-- District Safety & Threat Index Rankings -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <h2 class="card-title">Police District Safety Index & Threat Rankings</h2>
+                            <span class="card-subtitle">Comprehensive safety score (0-100) and risk tier classification for all Chicago Districts</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="table-district-risk">
+                            <thead>
+                                <tr>
+                                    <th>District Code</th>
+                                    <th>Jurisdiction / Area Name</th>
+                                    <th>Total Incidents</th>
+                                    <th>Violent Incidents</th>
+                                    <th>Violent Ratio</th>
+                                    <th>Clearance Rate</th>
+                                    <th>Threat Index</th>
+                                    <th>Safety Score</th>
+                                    <th>Risk Classification</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-district-risk">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 5: INCIDENT EXPLORER ================= -->
+            <section class="view-panel" id="view-explorer">
+                <div class="glass-card">
+                    <div class="card-header table-header-flex">
+                        <div class="card-title-group">
+                            <h2 class="card-title">Authentic Incident Records Database</h2>
+                            <span class="card-subtitle" id="explorer-match-count">Showing matching incidents from City of Chicago open data</span>
+                        </div>
+                        <div class="table-pagination-controls">
+                            <span class="page-indicator" id="page-indicator">Page 1 of 1</span>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-page-prev" disabled>Previous</button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-page-next">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="table-incidents">
+                            <thead>
+                                <tr>
+                                    <th>Case #</th>
+                                    <th>Timestamp</th>
+                                    <th>Primary Offense</th>
+                                    <th>Description</th>
+                                    <th>Block Address</th>
+                                    <th>District</th>
+                                    <th>Classification</th>
+                                    <th>Arrest</th>
+                                    <th>Domestic</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-incidents">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+            </section>
+
+            <!-- ================= VIEW 6: EXECUTIVE REPORT ================= -->
+            <section class="view-panel" id="view-report">
+                <div class="report-paper glass-card" id="printable-report">
+                    <div class="report-header">
+                        <div class="report-badge">CONFIDENTIAL // LAW ENFORCEMENT & PUBLIC SAFETY INTELLIGENCE</div>
+                        <h2 class="report-title">EXECUTIVE CRIME DATA & THREAT ASSESSMENT REPORT</h2>
+                        <div class="report-meta">
+                            <span>Jurisdiction: <strong>City of Chicago, Illinois</strong></span>
+                            <span>Generated: <strong id="report-timestamp">--</strong></span>
+                            <span>Data Source: <strong>Chicago Police Department Socrata Portal</strong></span>
+                        </div>
+                    </div>
+
+                    <hr class="report-divider">
+
+                    <div class="report-section">
+                        <h3 class="report-section-title">1. EXECUTIVE SUMMARY & METRIC BASELINE</h3>
+                        <p class="report-text" id="report-exec-summary">
+                            This report evaluates crime activity across all 22 Chicago Police Districts based on authentic incident reports.
+                        </p>
+                        <div class="report-kpi-row" id="report-kpi-summary-cards">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3 class="report-section-title">2. CRITICAL HOTSPOTS & VULNERABILITY ZONES</h3>
+                        <p class="report-text">
+                            The following police districts present the highest composite threat scores, requiring enhanced tactical deployment and community policing interventions:
+                        </p>
+                        <div id="report-hotspot-list" class="report-hotspot-grid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3 class="report-section-title">3. TEMPORAL PEAK RISK WINDOWS</h3>
+                        <p class="report-text" id="report-temporal-summary">
+                            Diurnal frequency analysis indicates elevated vulnerability during late evening and night shifts.
+                        </p>
+                    </div>
+
+                    <div class="report-section">
+                        <h3 class="report-section-title">4. STRATEGIC RECOMMENDATIONS</h3>
+                        <ul class="report-recommendations-list">
+                            <li><strong>Tactical Patrol Allocation:</strong> Focus concentrated mobile patrols in top hotspot districts during the identified peak diurnal window (20:00 - 02:00).</li>
+                            <li><strong>Clearance Rate Optimization:</strong> Enhance rapid-response detective resources for property theft and aggravated assault where current arrest clearance is depressed.</li>
+                            <li><strong>Domestic Violence Intervention:</strong> Coordinate with social work and community crisis units for repeated domestic dispute blocks.</li>
+                            <li><strong>Environmental Crime Prevention (CPTED):</strong> Deploy high-visibility smart lighting and surveillance pods in top transit and retail parking environments.</li>
+                        </ul>
+                    </div>
+
+                    <div class="report-footer">
+                        <button type="button" class="btn btn-primary" id="btn-print-report" onclick="window.print()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                            <span>Print / Save as PDF</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 7: WORLD CITIES ROSTER ================= -->
+            <section class="view-panel" id="view-global-cities">
+                <div class="panel-header glass-card" style="margin-bottom: 20px;">
+                    <div class="panel-header-left">
+                        <div class="panel-badge">GLOBAL METROPOLITAN SURVEILLANCE // 50+ COUNTRIES &amp; 150+ MAJOR METROS</div>
+                        <h2 class="panel-title">WORLD CITIES CRIME &amp; SAFETY INTELLIGENCE ROSTER</h2>
+                        <p class="panel-subtitle">
+                            Comparative international crime rates, UNODC &amp; Numbeo safety indices, and localized municipal police districts across all 6 continents.
+                        </p>
+                    </div>
+                    <div class="panel-header-right">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-export-global-cities" title="Export full world cities database as CSV">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Download World Cities CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Global Roster Summary Bar -->
+                <div class="global-kpi-strip">
+                    <div class="kpi-card glass-card">
+                        <span class="kpi-label">Monitored World Metros</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value text-cyan" id="global-total-cities-count">150+</span>
+                        </div>
+                        <span class="kpi-subtext">Across 52 Sovereign Nations</span>
+                    </div>
+                    <div class="kpi-card glass-card">
+                        <span class="kpi-label">Safest Global Metropolis</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value text-emerald">Abu Dhabi</span>
+                        </div>
+                        <span class="kpi-subtext">Safety Index: 88.4 / 100</span>
+                    </div>
+                    <div class="kpi-card glass-card">
+                        <span class="kpi-label">International Benchmark</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value text-amber">54.2</span>
+                        </div>
+                        <span class="kpi-subtext">Average Global Safety Score</span>
+                    </div>
+                    <div class="kpi-card glass-card">
+                        <span class="kpi-label">Active City Surveillance</span>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value text-primary" id="active-surveillance-city-name">Chicago, USA</span>
+                        </div>
+                        <span class="kpi-subtext" id="active-surveillance-agency">Chicago Police Department</span>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Controls for World Cities -->
+                <div class="global-cities-toolbar glass-card">
+                    <div class="search-input-wrapper" style="min-width: 260px;">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="input-search-global-cities" class="filter-search" placeholder="Search any city, country, or agency...">
+                    </div>
+
+                    <div class="toolbar-filter-item">
+                        <label for="select-global-region" class="filter-label" style="margin-bottom: 2px;">Region</label>
+                        <select id="select-global-region" class="filter-select">
+                            <option value="all">All Continents &amp; Regions</option>
+                            <option value="North America">North America</option>
+                            <option value="Europe">Europe</option>
+                            <option value="Asia-Pacific">Asia-Pacific</option>
+                            <option value="Latin America">Latin America</option>
+                            <option value="Middle East">Middle East</option>
+                            <option value="Africa">Africa</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-filter-item">
+                        <label for="select-global-sort" class="filter-label" style="margin-bottom: 2px;">Sort Metric</label>
+                        <select id="select-global-sort" class="filter-select">
+                            <option value="safety_index_desc">Highest Safety Index</option>
+                            <option value="crime_index_desc">Highest Crime Index</option>
+                            <option value="population_desc">Largest Population</option>
+                            <option value="city_asc">City Name (A-Z)</option>
+                            <option value="country_asc">Country (A-Z)</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-filter-item">
+                        <label for="select-global-risk-tier" class="filter-label" style="margin-bottom: 2px;">Risk Tier</label>
+                        <select id="select-global-risk-tier" class="filter-select">
+                            <option value="all">All Risk Tiers</option>
+                            <option value="Low / Safe">Low / Safe</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Elevated">Elevated</option>
+                            <option value="High Alert">High Alert</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-match-badge" id="global-cities-match-count" style="margin-left: auto;">
+                        Showing 230+ cities
+                    </div>
+                </div>
+
+                <!-- World Cities Cards Grid -->
+                <div class="global-cities-grid" id="grid-global-cities">
+                    <!-- Populated dynamically via app.js -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Citizen Safety & Emergency Helpline Footer -->
+        <footer class="site-footer" id="site-footer" role="contentinfo">
+            <div class="footer-container">
+                
+                <!-- 24x7 Quick-Dial Emergency Ribbon -->
+                <div class="footer-emergency-ribbon">
+                    <div class="emergency-ribbon-header">
+                        <div class="emergency-title-group">
+                            <span class="emergency-pulse-beacon" aria-hidden="true"></span>
+                            <h2 class="emergency-title">🚨 24/7 Citizen Safety & Emergency Response Helplines</h2>
+                        </div>
+                        <span class="emergency-subtitle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Immediate Police Dispatch, Victim Advocacy & Cyber Incident Response
+                        </span>
+                    </div>
+
+                    <div class="helpline-pills-grid">
+                        <!-- 911 Emergency -->
+                        <div class="helpline-pill">
+                            <div class="helpline-pill-header">
+                                <span class="helpline-tag">Immediate Dispatch</span>
+                                <span class="badge badge-pulse" style="font-size: 0.65rem; background: rgba(239, 68, 68, 0.2); color: #f87171;">Emergency</span>
+                            </div>
+                            <div class="helpline-number-row">
+                                <span class="helpline-number">911</span>
+                            </div>
+                            <span class="helpline-desc">Police, Fire & Paramedics</span>
+                            <div class="helpline-actions">
+                                <a href="tel:911" class="btn-pill-call" title="Call 911 Emergency">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                    <span>Call</span>
+                                </a>
+                                <button type="button" class="btn-pill-copy" data-copy="911" title="Copy Number">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 311 Non-Emergency -->
+                        <div class="helpline-pill">
+                            <div class="helpline-pill-header">
+                                <span class="helpline-tag">City Support</span>
+                                <span class="badge" style="font-size: 0.65rem; background: rgba(56, 189, 248, 0.2); color: var(--accent-sky);">Non-Emergency</span>
+                            </div>
+                            <div class="helpline-number-row">
+                                <span class="helpline-number">311</span>
+                            </div>
+                            <span class="helpline-desc">City Services & Police Assistance</span>
+                            <div class="helpline-actions">
+                                <a href="tel:311" class="btn-pill-call" title="Call 311 Non-Emergency">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                    <span>Call</span>
+                                </a>
+                                <button type="button" class="btn-pill-copy" data-copy="311" title="Copy Number">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Domestic Violence Helpline -->
+                        <div class="helpline-pill urgent-women">
+                            <div class="helpline-pill-header">
+                                <span class="helpline-tag helpline-badge-women">Victim Support</span>
+                                <span class="badge" style="font-size: 0.65rem; background: rgba(244, 63, 94, 0.2); color: #fb7185;">24x7 Hotline</span>
+                            </div>
+                            <div class="helpline-number-row">
+                                <span class="helpline-number" style="font-size: 1rem; color: #fb7185;">1-800-799-SAFE</span>
+                            </div>
+                            <span class="helpline-desc">Domestic Violence Advocates</span>
+                            <div class="helpline-actions">
+                                <a href="tel:18007997233" class="btn-pill-call women" title="Call Domestic Violence Hotline">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                    <span>Call</span>
+                                </a>
+                                <button type="button" class="btn-pill-copy" data-copy="1-800-799-7233" title="Copy Number">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 988 Suicide & Crisis Lifeline -->
+                        <div class="helpline-pill">
+                            <div class="helpline-pill-header">
+                                <span class="helpline-tag">Mental Health</span>
+                                <span class="badge" style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.2); color: #34d399;">Free & Confidential</span>
+                            </div>
+                            <div class="helpline-number-row">
+                                <span class="helpline-number">988</span>
+                            </div>
+                            <span class="helpline-desc">Suicide & Crisis Counseling</span>
+                            <div class="helpline-actions">
+                                <a href="tel:988" class="btn-pill-call" title="Call 988 Crisis Line">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                    <span>Call</span>
+                                </a>
+                                <button type="button" class="btn-pill-copy" data-copy="988" title="Copy Number">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- India Portal & Cyber Cell Access -->
+                        <div class="helpline-pill urgent-cyber">
+                            <div class="helpline-pill-header">
+                                <span class="helpline-tag helpline-badge-cyber">India Cyber Cell</span>
+                                <span class="badge" style="font-size: 0.65rem; background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan);">NCRB / 1930</span>
+                            </div>
+                            <div class="helpline-number-row">
+                                <span class="helpline-number" style="color: var(--accent-cyan);">1930 / 112</span>
+                            </div>
+                            <span class="helpline-desc">Bharat CrimeTrack & Cyber Cell</span>
+                            <div class="helpline-actions">
+                                <a href="/india" class="btn-pill-call cyber" title="Switch to Bharat CrimeTrack">
+                                    <span>Open India Portal ↗</span>
+                                </a>
+                                <button type="button" class="btn-pill-copy" data-copy="1930" title="Copy 1930 Cyber Helpline">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Multi-Column Safety Grid -->
+                <div class="footer-main-grid">
+                    
+                    <!-- Col 1: Cyber Security & Financial Fraud Reporting -->
+                    <div class="footer-col">
+                        <div class="footer-col-header">
+                            <div class="footer-col-icon cyan">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            </div>
+                            <h3 class="footer-col-title">Cyber Crime Reporting</h3>
+                        </div>
+
+                        <div class="footer-highlight-card">
+                            <div class="highlight-badge-row">
+                                <span class="highlight-badge secure">FBI IC3 & FTC Portal</span>
+                                <span style="font-size:0.7rem; color:var(--accent-cyan);">Online Ingestion</span>
+                            </div>
+                            <p class="highlight-card-text">
+                                Report internet scams, ransomware, cryptocurrency theft, or business email compromise directly to federal cyber response teams.
+                            </p>
+                        </div>
+
+                        <a href="https://www.ic3.gov" target="_blank" rel="noopener noreferrer" class="footer-action-btn primary-cyan">
+                            <span>FBI Internet Crime Complaint (IC3) ↗</span>
+                        </a>
+
+                        <a href="/india" class="footer-action-btn">
+                            <span>India Cyber Cell & NCRB Command ↗</span>
+                        </a>
+                    </div>
+
+                    <!-- Col 2: Victim Advocacy & Safety Resources -->
+                    <div class="footer-col">
+                        <div class="footer-col-header">
+                            <div class="footer-col-icon rose">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                            <h3 class="footer-col-title">Victim Safety Network</h3>
+                        </div>
+
+                        <ul class="footer-list">
+                            <li class="footer-list-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span><strong>National Domestic Violence Hotline:</strong> 1-800-799-7233 (SMS: Text "START" to 88788)</span>
+                            </li>
+                            <li class="footer-list-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span><strong>National Sexual Assault Hotline (RAINN):</strong> 1-800-656-4673</span>
+                            </li>
+                            <li class="footer-list-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span><strong>Crime Victims Assistance Line:</strong> 1-855-4-VICTIM</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Col 3: Public Safety Advisory -->
+                    <div class="footer-col">
+                        <div class="footer-col-header">
+                            <div class="footer-col-icon amber">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            </div>
+                            <h3 class="footer-col-title">Safety Recommendations</h3>
+                        </div>
+
+                        <ul class="footer-list">
+                            <li class="footer-list-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                <span><strong>Verify Caller Identity:</strong> Government agencies will never demand wire transfers or prepaid gift cards.</span>
+                            </li>
+                            <li class="footer-list-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                <span><strong>Preserve Digital Logs:</strong> Document caller IDs, email transcripts, and transaction receipts before filing an incident.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Col 4: Official Law Enforcement Portals -->
+                    <div class="footer-col">
+                        <div class="footer-col-header">
+                            <div class="footer-col-icon blue">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                            </div>
+                            <h3 class="footer-col-title">Official Portals</h3>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <a href="https://home.chicagopolice.org" target="_blank" rel="noopener noreferrer" class="footer-link-item">
+                                <span>Chicago Police Department (CPD)</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                            <a href="https://data.cityofchicago.org" target="_blank" rel="noopener noreferrer" class="footer-link-item">
+                                <span>City of Chicago Open Data Portal</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                            <a href="/india" class="footer-link-item">
+                                <span>Bharat CrimeTrack // India NCRB Portal</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer Bottom Disclaimer Bar with Iconic Corner CSV Buttons -->
+                <div class="footer-bottom-bar">
+                    <p class="footer-disclaimer">
+                        <strong>Public Safety Notice:</strong> CrimeTrack Intelligence is an analytical visualization system designed for public awareness and spatial research using open municipal crime datasets. In an active life-threatening crisis, dial <strong>911</strong> immediately.
+                    </p>
+
+                    <div class="footer-corner-group">
+                        <div class="footer-status-tag">
+                            <span class="footer-status-dot"></span>
+                            <span>Emergency Helpline Active</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </footer>
+
+        <!-- Incident Inspector Modal -->
+        <div class="modal-backdrop" id="modal-incident" aria-hidden="true">
+            <div class="modal-dialog glass-card" role="dialog" aria-modal="true" aria-labelledby="modal-incident-title">
+                <div class="modal-header">
+                    <div class="modal-title-group">
+                        <span class="modal-badge text-danger" id="modal-badge-type">OFFENSE</span>
+                        <h3 class="modal-title" id="modal-incident-title">Case #--</h3>
+                    </div>
+                    <button type="button" class="btn-close" id="btn-close-modal" aria-label="Close modal">&times;</button>
+                </div>
+                <div class="modal-body" id="modal-incident-body">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-modal-dismiss">Close Inspector</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync Confirmation Modal -->
+        <div class="modal-backdrop" id="modal-sync" aria-hidden="true">
+            <div class="modal-dialog glass-card sync-dialog" role="dialog" aria-modal="true">
+                <div class="modal-header">
+                    <h3 class="modal-title">Synchronize Live City of Chicago Open Data</h3>
+                    <button type="button" class="btn-close" id="btn-close-sync-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">
+                        Connect directly to the official City of Chicago Socrata Open Data Portal and pull fresh verified incident reports into your local analytical database.
+                    </p>
+                    <div class="sync-input-group">
+                        <label for="sync-record-count">Records to Fetch:</label>
+                        <select id="sync-record-count" class="filter-select">
+                            <option value="2500">2,500 Latest Incidents</option>
+                            <option value="5000" selected>5,000 Latest Incidents</option>
+                            <option value="10000">10,000 Latest Incidents</option>
+                        </select>
+                    </div>
+                    <div class="sync-progress-box hidden" id="sync-progress-box">
+                        <div class="spinner"></div>
+                        <span id="sync-status-msg">Fetching live Socrata payloads...</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-sync">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-sync">Start Ingestion</button>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <!-- Floating Safety Toast -->
+        <div class="safety-toast" id="safety-toast" role="alert" aria-live="polite">
+            <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span id="safety-toast-message">Number copied to clipboard</span>
+        </div>
+
+    </div>
+
+    <!-- Leaflet & Heatmap Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <!-- Chart.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    
+    <!-- Dashboard Core Logic -->
+    <script src="/js/app.js?v=3.0.0"></script>
+
+    <!-- AI Tactical Copilot Engine -->
+    <script src="/js/ai_copilot.js?v=3.0.0"></script>
+</body>
+</html>
