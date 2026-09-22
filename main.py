@@ -3,7 +3,7 @@ import io
 import csv
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
-from fastapi import FastAPI, Query, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Query, HTTPException, BackgroundTasks, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +21,13 @@ from backend.analytics import (
     build_where_clause
 )
 from backend.database import get_db_connection
+from backend.auth import (
+    create_user,
+    authenticate_user,
+    get_user_by_session,
+    logout_session,
+    get_all_users_count
+)
 from scripts.fetch_data import fetch_and_ingest
 from backend.india_data import (
     init_india_table,
@@ -794,6 +801,105 @@ def india_women_export(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+# =========================================================================
+# USER AUTHENTICATION & SESSION MANAGEMENT ENDPOINTS
+# =========================================================================
+
+class SignUpRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: Optional[str] = "analyst"
+    organization: Optional[str] = None
+    badge_number: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/auth/signup")
+def auth_signup(req: SignUpRequest):
+    """Registers a new user account and creates an authenticated session in SQLite."""
+    user, token, err = create_user(
+        name=req.name,
+        email=req.email,
+        password=req.password,
+        role=req.role or "analyst",
+        organization=req.organization,
+        badge_number=req.badge_number
+    )
+    if err or not user:
+        raise HTTPException(status_code=400, detail=err or "Registration failed.")
+    return {
+        "status": "success",
+        "message": f"Welcome to CrimeWatch, {user['name']}!",
+        "user": user,
+        "token": token
+    }
+
+@app.post("/api/auth/login")
+def auth_login(req: LoginRequest):
+    """Authenticates user credentials and generates a fresh 30-day session token."""
+    user, token, err = authenticate_user(email=req.email, password=req.password)
+    if err or not user:
+        raise HTTPException(status_code=401, detail=err or "Authentication failed.")
+    return {
+        "status": "success",
+        "message": f"Welcome back, {user['name']}!",
+        "user": user,
+        "token": token
+    }
+
+@app.get("/api/auth/me")
+def auth_me(
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = Query(None)
+):
+    """Resolves active session token to user profile. Returns authenticated=True/False."""
+    session_token = None
+    if authorization and authorization.startswith("Bearer "):
+        session_token = authorization.split(" ", 1)[1].strip()
+    elif token:
+        session_token = token.strip()
+
+    if not session_token:
+        return {"authenticated": False, "user": None}
+
+    user = get_user_by_session(session_token)
+    if not user:
+        return {"authenticated": False, "user": None}
+
+    return {
+        "authenticated": True,
+        "user": user
+    }
+
+@app.post("/api/auth/logout")
+def auth_logout(
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = Query(None)
+):
+    """Invalidates and deletes active user session token."""
+    session_token = None
+    if authorization and authorization.startswith("Bearer "):
+        session_token = authorization.split(" ", 1)[1].strip()
+    elif token:
+        session_token = token.strip()
+
+    if session_token:
+        logout_session(session_token)
+    return {
+        "status": "success",
+        "message": "Logged out successfully"
+    }
+
+@app.get("/api/auth/stats")
+def auth_stats():
+    """Returns general user registration statistics."""
+    return {
+        "total_registered_users": get_all_users_count()
+    }
 
 # Mount static files for frontend assets
 app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")

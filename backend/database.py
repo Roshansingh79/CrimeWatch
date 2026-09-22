@@ -76,6 +76,32 @@ def init_db():
     );
     """)
 
+    # User Accounts & Authentication Schema
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'analyst',
+        badge_number TEXT,
+        organization TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP
+    );
+    """)
+
+    # Active User Sessions Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    """)
+
     # Performance indexes for analytics and spatial/temporal queries
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_crimes_date ON crimes(date);",
@@ -97,7 +123,11 @@ def init_db():
         "CREATE INDEX IF NOT EXISTS idx_india_incidents_arrest ON india_incidents(arrest);",
         "CREATE INDEX IF NOT EXISTS idx_india_incidents_cs ON india_incidents(chargesheet_filed);",
         "CREATE INDEX IF NOT EXISTS idx_india_incidents_domestic ON india_incidents(domestic);",
-        "CREATE INDEX IF NOT EXISTS idx_india_incidents_coords ON india_incidents(latitude, longitude);"
+        "CREATE INDEX IF NOT EXISTS idx_india_incidents_coords ON india_incidents(latitude, longitude);",
+        # User auth indexes
+        "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);",
+        "CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token);",
+        "CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);"
     ]
 
     for idx_sql in indexes:
